@@ -1,14 +1,16 @@
 import { set, reset } from 'mockdate';
 
+type EventStatus = { status: string }
+
 class CheckLastEventStatus {
     constructor(private readonly loadLastEventRepository: LoadLastEventRepository) {
     }
 
-    async perform({ groupId }: { groupId: string }): Promise<string>{
+    async perform({ groupId }: { groupId: string }): Promise<EventStatus>{
         const event = await this.loadLastEventRepository.loadLastEvent({ groupId });
-        if (event === undefined) return 'done';
+        if (event === undefined) return { status: 'done' };
         const now = new Date();
-        return event.endDate > now ? 'active' : 'inReview';
+        return event.endDate > now ? { status:'active' } : { status:'inReview' };
     }
 }
 
@@ -63,9 +65,9 @@ describe('CheckLastEventStatus', () => {7
         const { sut, loadLastEventRepository } = makeSut();
         loadLastEventRepository.output = undefined;
 
-        const status = await sut.perform({ groupId: groupId });
+        const eventStatus = await sut.perform({ groupId: groupId });
 
-        expect(status).toBe('done');
+        expect(eventStatus.status).toBe('done');
     })
 
     it('should return status active when now is before event and time', async () => {
@@ -74,9 +76,9 @@ describe('CheckLastEventStatus', () => {7
             endDate: new Date(new Date().getTime() + 1)
         };
 
-        const status = await sut.perform({ groupId: groupId });
+        const eventStatus = await sut.perform({ groupId: groupId });
 
-        expect(status).toBe('active');
+        expect(eventStatus.status).toBe('active');
     })
 
     it('should return status inReview when now is after event and time', async () => {
@@ -85,8 +87,8 @@ describe('CheckLastEventStatus', () => {7
             endDate: new Date(new Date().getTime() - 1)
         };
 
-        const status = await sut.perform({ groupId: groupId });
+        const eventStatus = await sut.perform({ groupId: groupId });
 
-        expect(status).toBe('inReview');
+        expect(eventStatus.status).toBe('inReview');
     })  
 })
