@@ -1,6 +1,25 @@
 import { set, reset } from 'mockdate';
 
-type EventStatus = { status: string }
+class EventStatus {
+    status: 'active' | 'inReview' | 'done';
+
+    constructor(event?: { endDate: Date, reviewDurationInHours: number }) {
+        if (event === undefined) {
+            this.status = 'done';
+            return;
+        }
+
+        const now = new Date();
+        if (event.endDate >= now) {
+            this.status = 'active';
+            return;
+        }
+
+        const reviewDurationInMs = event.reviewDurationInHours * 60 * 60 * 1000;
+        const reviewDate = new Date(event.endDate.getTime() + reviewDurationInMs);
+        this.status = reviewDate >= now ? 'inReview' : 'done';
+    }
+}
 
 class CheckLastEventStatus {
     constructor(private readonly loadLastEventRepository: LoadLastEventRepository) {
@@ -8,12 +27,7 @@ class CheckLastEventStatus {
 
     async perform({ groupId }: { groupId: string }): Promise<EventStatus>{
         const event = await this.loadLastEventRepository.loadLastEvent({ groupId });
-        if (event === undefined) return { status: 'done' };
-        const now = new Date();
-        if (event.endDate >= now) return { status:'active' }
-        const reviewDurationInMs = event.reviewDurationInHours * 60 * 60 * 1000;
-        const reviewDate = new Date(event.endDate.getTime() + reviewDurationInMs);
-        return reviewDate >= now ? { status: 'inReview' } : { status: 'done' };
+        return new EventStatus(event);
     }
 }
 
@@ -55,6 +69,7 @@ describe('CheckLastEventStatus', () => {7
     afterAll(() => {
         reset();
     })
+    
     it('should get last event data', async () => {
         const { sut, loadLastEventRepository } = makeSut();
 
