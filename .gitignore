@@ -1,0 +1,6 @@
+**/node_modules
+.vs/ProjectSettings.json
+.vs/slnx.sqlite
+.vs/VSWorkspaceState.json
+.vs/Sigrid_Front/config/applicationhost.config
+.vs/Sigrid_Front/v16/.suo
